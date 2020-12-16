@@ -9,17 +9,15 @@ else
     exit 1
 fi
 
-
-
 # Set variables
 ip_service_provider="icanhazip.com"
 email_recipient="your@email.here"
 subdomain1_fqdn="your.subdomain.here"
 subdomain1_hash="YoUr=SubDomain=HaSh=HeRe="
+
 ## If you add a second subdomain make sure to uncomment the section that handles the update of the second subdomain.
 #subdomain2_fqdn="your.second.subdomain.here"
 #subdomain2_hash="YoUr=SeCoNd=SubDomain=HaSh=HeRe="
-
 
 
 # Declare the needed functions
@@ -85,33 +83,49 @@ email () {
     printf "%s\n\n\nThe IP Address has changed\nThe new IP Address is %s\n\n\n\nAfraid.org Log:\n%s" "$fqdn" "$ip" "$log" | mail -s "$email_subject" $rec
 }
 
-
-
-# Get External IP from the IP service provider
-external_ip=$(/usr/local/bin/curl -s $ip_service_provider)
+# Function to Get External IP from the IP service provider
+external_ip () {
+    local i=1
+    while [ $i -le 5 ]
+    do
+        i=$((i + 1))
+        # Test if IP Service Provider Server is reachable
+        if nc -4zw2 $ip_service_provider 443 2> /dev/null
+        then
+            local ext_ip=$(/usr/local/bin/curl -s $ip_service_provider)
+            if $(isvalidip "$ext_ip"); then echo "$ext_ip"; break; fi
+        fi
+    done
+}
 
 # If external_ip is not the same as the ips retrieved from the DNS server then update them and email the recepient
 
 # Test first subdomain
-# Get IP for monitored subdomain
+
+# Get IP for monitored subdomain from afraid.org
 subdomain1_ip=$(get_host_ip $subdomain1_fqdn)
-if [ "$external_ip" != "$subdomain1_ip" ]
+
+if [ "$(external_ip)" != "$subdomain1_ip" ]
 then
     subdomain1_log="$(update_ip $subdomain1_hash)"
-    email "$subdomain1_fqdn" "$external_ip" "$email_recipient" "$subdomain1_log"
+    email "$subdomain1_fqdn" "$(external_ip)" "$email_recipient" "$subdomain1_log"
 else
     echo "IP for $subdomain1_fqdn already up to date."
 fi
 
-## Test second subdomain
-## Sleep 15 seconds before checking IP because subdomains are linked and the second might have already been updated from the first
+# Test second subdomain
+# Uncomment this section for a second subdomain
+
+# Sleep 15 seconds before checking IP because subdomains are usually linked and the second might have already been updated from the first
 #sleep 15
-## Get IP for monitored subdomain
+
+# Get IP for monitored subdomain from afraid.org
 #subdomain2_ip=$(get_host_ip $subdomain2_fqdn)
-#if [ "$external_ip" != "$subdomain2_ip" ]
+
+#if [ "$(external_ip)" != "$subdomain2_ip" ]
 #then
 #    subdomain2_log=$(update_ip $subdomain2_hash)
-#    email "$subdomain2_fqdn" "$external_ip" "$email_recipient" "$subdomain2_log"
+#    email "$subdomain2_fqdn" "$(external_ip)" "$email_recipient" "$subdomain2_log"
 #else
 #    echo "IP for $subdomain2_fqdn already up to date."
 #fi
