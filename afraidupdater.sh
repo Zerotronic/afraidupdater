@@ -110,7 +110,7 @@ then
     subdomain1_log="$(update_ip $subdomain1_hash)"
     email "$subdomain1_fqdn" "$(external_ip)" "$email_recipient" "$subdomain1_log"
 else
-    echo "IP for $subdomain1_fqdn already up to date."
+    echo "IP for $subdomain1_fqdn already up to date. - IP: $(external_ip)"
 fi
 
 # Test second subdomain
@@ -127,5 +127,5 @@ fi
 #    subdomain2_log=$(update_ip $subdomain2_hash)
 #    email "$subdomain2_fqdn" "$(external_ip)" "$email_recipient" "$subdomain2_log"
 #else
-#    echo "IP for $subdomain2_fqdn already up to date."
+#    echo "IP for $subdomain2_fqdn already up to date. - IP: $(external_ip)"
 #fi
